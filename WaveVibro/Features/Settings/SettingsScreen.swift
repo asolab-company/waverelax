@@ -5,33 +5,47 @@ struct SettingsScreen: View {
     @Environment(AppEnvironment.self) private var app
     @State private var isHelpPresented = false
     @State private var isRatingPresented = false
+    @State private var isWebRestorePresented = false
+    @State private var notice: SettingsNotice?
 
     var body: some View {
         ZStack {
             GradientCanvas()
 
-            VStack(alignment: .leading, spacing: 30) {
-                Text("Settings")
-                    .font(AppTypography.regular(20))
-                    .foregroundColor(.white)
+            ScrollView {
+                VStack(alignment: .leading, spacing: 30) {
+                    Text("Settings")
+                        .font(AppTypography.regular(20))
+                        .foregroundColor(.white)
 
-                if !app.store.isSubscribed {
-                    premiumCard
-                }
-
-                VStack(spacing: 10) {
-                    ForEach(rows) { row in
-                        SettingsActionRow(row: row)
+                    if !app.store.isSubscribed {
+                        premiumCard
                     }
-                }
-                .padding(.top, 20)
 
-                Spacer()
+                    VStack(spacing: 10) {
+                        ForEach(rows) { row in
+                            SettingsActionRow(row: row)
+                        }
+                    }
+                    .padding(.top, 20)
+
+                }
+                .padding(.horizontal, 20)
+                .padding(.top, 20)
+                .padding(.bottom, 100)
             }
-            .padding(.horizontal, 20)
-            .padding(.top, 20)
-            .padding(.bottom, 100)
         }
+        .sheet(isPresented: $isWebRestorePresented) { RestoreWebSubscriptionView().environment(app) }
+        .alert(notice?.title ?? "WaveVibro", isPresented: Binding(
+            get: { notice != nil }, set: { if !$0 { notice = nil } }
+        ), presenting: notice) { notice in
+            if case .contact = notice {
+                Button("Copy email") { UIPasteboard.general.string = "mail@origino.space" }
+                Button("Close", role: .cancel) {}
+            } else {
+                Button("OK", role: .cancel) {}
+            }
+        } message: { notice in Text(notice.message) }
         .sheet(isPresented: $isRatingPresented) {
             RatingPrompt { rating in
                 isRatingPresented = false
@@ -49,7 +63,7 @@ struct SettingsScreen: View {
     }
 
     private var premiumCard: some View {
-        Button(action: app.paywall.present) {
+        Button(action: app.paywall.presentNative) {
             HStack(spacing: 12) {
                 Image("ic_vip")
                     .resizable()
@@ -102,10 +116,19 @@ struct SettingsScreen: View {
             },
         ]
 
+        items.append(SettingsRow(icon: "app_ic_help", title: "Contact Us") {
+            let url = URL(string: "mailto:mail@origino.space")!
+            if UIApplication.shared.canOpenURL(url) { UIApplication.shared.open(url) }
+            else { notice = .contact }
+        })
         if !app.store.isSubscribed {
+            items.append(SettingsRow(icon: "app_ic_restore", title: "Restore web subscription") { isWebRestorePresented = true })
             items.append(
                 SettingsRow(icon: "app_ic_restore", title: "Restore Purchases") {
-                    Task { await app.store.restore() }
+                    Task {
+                        await app.store.restore()
+                        if let message = app.store.errorMessage { notice = .subscription(message) }
+                    }
                 }
             )
         }
@@ -115,6 +138,23 @@ struct SettingsScreen: View {
     private func open(_ url: URL?) {
         guard let url else { return }
         UIApplication.shared.open(url)
+    }
+}
+
+private enum SettingsNotice {
+    case contact
+    case subscription(String)
+    var title: String {
+        switch self {
+        case .contact: "Contact Us"
+        case .subscription: "Subscription"
+        }
+    }
+    var message: String {
+        switch self {
+        case .contact: "mail@origino.space"
+        case .subscription(let message): message
+        }
     }
 }
 

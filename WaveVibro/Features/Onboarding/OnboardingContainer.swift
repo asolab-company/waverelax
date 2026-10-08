@@ -2,7 +2,9 @@ import SwiftUI
 import UIKit
 
 struct OnboardingContainer: View {
+    @Environment(AppEnvironment.self) private var app
     @State private var page = 0
+    @State private var preparing = false
     var onFinished: () -> Void
 
     var body: some View {
@@ -20,13 +22,16 @@ struct OnboardingContainer: View {
                 bottomBar
             }
         }
+        .task { await app.store.preparePaywall() }
+        .onAppear { AnalyticsService.shared.track("Onboarding Started") }
+        .onChange(of: page) { _, value in AnalyticsService.shared.track("Onboarding Step Viewed", properties: ["step": value + 1]) }
     }
 
     private var bottomBar: some View {
         VStack(spacing: 10) {
             PageDots(count: 3, current: page)
 
-            PrimaryCapsuleButton(title: page == 2 ? "Start Listening" : "Continue") {
+            PrimaryCapsuleButton(title: page == 2 ? "Start Listening" : "Continue", isBusy: preparing, isEnabled: !preparing) {
                 if page < 2 {
                     withAnimation(.easeInOut(duration: 0.25)) {
                         page += 1
@@ -47,8 +52,14 @@ struct OnboardingContainer: View {
     }
 
     private func completeFlow() {
-        OnboardingStore.markCompleted()
-        onFinished()
+        preparing = true
+        Task {
+            await app.store.preparePaywall()
+            guard !Task.isCancelled else { return }
+            OnboardingStore.markCompleted()
+            AnalyticsService.shared.track("Onboarding Completed")
+            onFinished()
+        }
     }
 }
 

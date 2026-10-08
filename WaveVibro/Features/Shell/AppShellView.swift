@@ -28,8 +28,10 @@ struct AppShellView: View {
         .navigationBarBackButtonHidden(true)
         .ignoresSafeArea(.keyboard, edges: .bottom)
         .fullScreenCover(isPresented: $paywall.isPresented) {
-            PaywallScreen()
-                .environment(app)
+            Group {
+                if paywall.nativeOnly { PaywallScreen() }
+                else { ConfiguredPurchaseView() }
+            }.environment(app)
         }
     }
 }

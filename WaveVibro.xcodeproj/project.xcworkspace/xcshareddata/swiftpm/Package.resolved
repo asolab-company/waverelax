@@ -1,0 +1,42 @@
+{
+  "originHash" : "5ffd47ffd34be1039e25a517ae1c1cb0da033becf7c7f4419ba15b63b0490ab4",
+  "pins" : [
+    {
+      "identity" : "amplitude-swift",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/amplitude/Amplitude-Swift.git",
+      "state" : {
+        "revision" : "9479e13442caea26cef9e0a84ce9b97cd74bff83",
+        "version" : "1.18.8"
+      }
+    },
+    {
+      "identity" : "amplitudecore-swift",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/amplitude/AmplitudeCore-Swift.git",
+      "state" : {
+        "revision" : "78083c4fbd276735821025aec8601f06ace01bd1",
+        "version" : "1.5.4"
+      }
+    },
+    {
+      "identity" : "analytics-connector-ios",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/amplitude/analytics-connector-ios.git",
+      "state" : {
+        "revision" : "6d1a5b9666192861342b70ea0b2274180a5e1d4f",
+        "version" : "1.3.3"
+      }
+    },
+    {
+      "identity" : "appsflyerframework",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/AppsFlyerSDK/AppsFlyerFramework.git",
+      "state" : {
+        "revision" : "861777e06bd4585ed1aac716dec0fbffdd41677c",
+        "version" : "7.0.2"
+      }
+    }
+  ],
+  "version" : 3
+}

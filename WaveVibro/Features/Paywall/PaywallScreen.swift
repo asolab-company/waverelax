@@ -3,6 +3,7 @@ import SwiftUI
 import UIKit
 
 struct PaywallScreen: View {
+    var onFinished: (() -> Void)? = nil
     @Environment(AppEnvironment.self) private var app
     @Environment(\.dismiss) private var dismiss
     @State private var selectedPlan: AccessPlan = .weekly
@@ -46,6 +47,7 @@ struct PaywallScreen: View {
                                         style: plan.style
                                     ) {
                                         selectedPlan = plan
+                                        AnalyticsService.shared.track("Plan Selected", properties: ["plan": plan.title])
                                     }
                                 }
                             }
@@ -53,11 +55,19 @@ struct PaywallScreen: View {
                             PrimaryCapsuleButton(
                                 title: "Continue",
                                 isBusy: isPurchasing,
-                                isEnabled: !isPurchasing,
+                                isEnabled: !isPurchasing && product(for: selectedPlan) != nil,
                                 action: purchase
                             )
                             .padding(.top, 2)
 
+                            if let message = app.store.errorMessage {
+                                Text(message).font(AppTypography.regular(13)).foregroundStyle(AppPalette.primaryDeep)
+                                    .multilineTextAlignment(.center).accessibilityLabel(message)
+                                if app.store.products.isEmpty && !app.store.isLoadingProducts {
+                                    Button("Retry loading offers") { Task { await app.store.fetchProducts() } }
+                                        .foregroundStyle(AppPalette.primary)
+                                }
+                            }
                             footerActions
                         }
                         .padding(.horizontal, 30)
@@ -67,7 +77,12 @@ struct PaywallScreen: View {
                 }
             }
         }
+        .task { await app.store.preparePaywall() }
+        .onAppear { AnalyticsService.shared.track("Paywall Viewed", properties: ["source": onFinished == nil ? "settings_or_feature" : "startup"]) }
+        .onChange(of: app.store.isSubscribed) { _, active in if active { finish() } }
     }
+
+    private func finish() { if let onFinished { onFinished() } else { dismiss() } }
 
     private var paywallBackground: some View {
         ZStack(alignment: .top) {
@@ -97,7 +112,7 @@ struct PaywallScreen: View {
     }
 
     private var closeButton: some View {
-        Button(action: dismiss.callAsFunction) {
+        Button(action: finish) {
             Image(systemName: "xmark")
                 .font(.system(size: 17, weight: .medium))
                 .foregroundStyle(Color.white.opacity(0.68))
@@ -184,21 +199,18 @@ struct PaywallScreen: View {
         Task {
             let outcome = await app.store.purchase(product: product)
             isPurchasing = false
-            if case .success = outcome {
-                dismiss()
+            switch outcome {
+            case .success: finish()
+            case .pending: app.store.errorMessage = "Your purchase is awaiting confirmation. Access will update automatically."
+            case .failed(let message): app.store.errorMessage = message
+            case .cancelled: break
             }
         }
     }
 
     private func subtitle(for plan: AccessPlan) -> String {
-        switch plan {
-        case .weekly:
-            guard let product = app.store.weeklyProduct else { return "$4.99 / week" }
-            return "\(product.displayPrice) / week"
-        case .yearly:
-            guard let product = app.store.yearlyProduct else { return "$44.99 / year" }
-            return "\(product.displayPrice) / year"
-        }
+        guard let product = product(for: plan) else { return "Loading price…" }
+        return app.store.priceLine(for: product)
     }
 
     private func actionLink(_ title: String, action: @escaping () -> Void) -> some View {
