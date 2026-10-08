@@ -7,8 +7,8 @@ enum AppConfiguration {
     }
     enum Analytics {
         static let appleAppID = "6805003674"
-        static var appsFlyerDevKey: String { configured("WaveAppsFlyerDevKey") }
-        static var amplitudeAPIKey: String { configured("WaveAmplitudeAPIKey") }
+        static var appsFlyerDevKey: String { configured("rjMGTuktUc8HUfLXXo9wb8") }
+        static var amplitudeAPIKey: String { configured("a0aa79c3ce254d1bde55d1dae3f35bfc") }
         private static func configured(_ key: String) -> String {
             let value = Bundle.main.object(forInfoDictionaryKey: key) as? String ?? ""
             return value.hasPrefix("$(") ? "" : value
