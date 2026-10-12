@@ -33,7 +33,8 @@ final class AttributionService {
     }
 
     func applicationDidBecomeActive() {
-        guard isConfigured, !isRequestingATT else { return }
+        // ATT must not depend on whether the optional AppsFlyer key is configured.
+        guard !isRequestingATT else { return }
         guard ATTrackingManager.trackingAuthorizationStatus == .notDetermined else {
             startSessionIfReady()
             return
@@ -59,7 +60,7 @@ final class AttributionService {
     }
 
     private func startSessionIfReady() {
-        guard sessionReady, !isRequestingATT, !hasStartedForegroundSession,
+        guard isConfigured, sessionReady, !isRequestingATT, !hasStartedForegroundSession,
               UIApplication.shared.applicationState == .active,
               ATTrackingManager.trackingAuthorizationStatus != .notDetermined
         else { return }
