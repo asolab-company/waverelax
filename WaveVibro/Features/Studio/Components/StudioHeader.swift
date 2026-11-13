@@ -6,7 +6,7 @@ struct StudioHeader: View {
 
     var body: some View {
         HStack {
-            Text("WaveVibro")
+            Text("WaveRelax")
                 .font(AppTypography.heavy(20))
                 .foregroundColor(AppPalette.onCanvas)
 

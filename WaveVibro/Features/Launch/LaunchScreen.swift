@@ -29,7 +29,7 @@ struct LaunchScreen: View {
                     }
 
                     VStack(spacing: 8) {
-                        Text("WaveVibro")
+                        Text("WaveRelax")
                             .font(AppTypography.heavy(30))
                             .foregroundColor(AppPalette.onCanvas)
                         Text("Preparing your sound space")

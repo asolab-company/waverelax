@@ -59,7 +59,7 @@ struct HelpCenterScreen: View {
 
     private var introduction: some View {
         VStack(alignment: .leading, spacing: 10) {
-            Text("WaveVibro guide")
+            Text("WaveRelax guide")
                 .font(AppTypography.heavy(30, relativeTo: .largeTitle))
                 .foregroundStyle(.white)
 
@@ -176,8 +176,8 @@ private struct HelpTopic: Identifiable {
         HelpTopic(
             id: "about",
             icon: "waveform",
-            title: "What is WaveVibro?",
-            details: "WaveVibro is a collection of looping sound sessions designed for relaxation, focus, and resetting your pace. Choose a sound world, tune it, and start or stop the session whenever you like."
+            title: "What is WaveRelax?",
+            details: "WaveRelax is a collection of looping sound sessions designed for relaxation, focus, and resetting your pace. Choose a sound world, tune it, and start or stop the session whenever you like."
         ),
         HelpTopic(
             id: "modes",

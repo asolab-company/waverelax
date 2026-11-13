@@ -9,6 +9,7 @@
 /* Begin PBXBuildFile section */
 		A10000000000000000000001 /* AppsFlyerLib in Frameworks */ = {isa = PBXBuildFile; productRef = A30000000000000000000001 /* AppsFlyerLib */; };
 		A10000000000000000000002 /* AmplitudeSwift in Frameworks */ = {isa = PBXBuildFile; productRef = A30000000000000000000002 /* AmplitudeSwift */; };
+		A10000000000000000000003 /* Adapty in Frameworks */ = {isa = PBXBuildFile; productRef = A30000000000000000000003 /* Adapty */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -43,6 +44,7 @@
 			files = (
 				A10000000000000000000001 /* AppsFlyerLib in Frameworks */,
 				A10000000000000000000002 /* AmplitudeSwift in Frameworks */,
+				A10000000000000000000003 /* Adapty in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -87,6 +89,7 @@
 			packageProductDependencies = (
 				A30000000000000000000001 /* AppsFlyerLib */,
 				A30000000000000000000002 /* AmplitudeSwift */,
+				A30000000000000000000003 /* Adapty */,
 			);
 			productName = WaveVibro;
 			productReference = 9C62BEB82E38C7DA000710BD /* WaveVibro.app */;
@@ -119,6 +122,7 @@
 			packageReferences = (
 				A20000000000000000000001 /* XCRemoteSwiftPackageReference "AppsFlyerFramework" */,
 				A20000000000000000000002 /* XCRemoteSwiftPackageReference "Amplitude-Swift" */,
+				A20000000000000000000003 /* XCRemoteSwiftPackageReference "AdaptySDK-iOS" */,
 			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = 9C62BEB92E38C7DA000710BD /* Products */;
@@ -210,12 +214,12 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_STYLE = Manual;
-				CURRENT_PROJECT_VERSION = 3;
+				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = "";
 				ENABLE_PREVIEWS = NO;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = WaveVibro/Info.plist;
-				INFOPLIST_KEY_CFBundleDisplayName = "Vibration Waves";
+				INFOPLIST_KEY_CFBundleDisplayName = WaveRelax;
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphoneos*]" = YES;
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphonesimulator*]" = YES;
 				"INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents[sdk=iphoneos*]" = YES;
@@ -281,6 +285,14 @@
 				version = 1.18.8;
 			};
 		};
+		A20000000000000000000003 /* XCRemoteSwiftPackageReference "AdaptySDK-iOS" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/adaptyteam/AdaptySDK-iOS.git";
+			requirement = {
+				kind = exactVersion;
+				version = 4.4.0;
+			};
+		};
 /* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
@@ -293,6 +305,11 @@
 			isa = XCSwiftPackageProductDependency;
 			package = A20000000000000000000002 /* XCRemoteSwiftPackageReference "Amplitude-Swift" */;
 			productName = AmplitudeSwift;
+		};
+		A30000000000000000000003 /* Adapty */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = A20000000000000000000003 /* XCRemoteSwiftPackageReference "AdaptySDK-iOS" */;
+			productName = Adapty;
 		};
 /* End XCSwiftPackageProductDependency section */
 	};

@@ -21,6 +21,7 @@ struct OnboardingContainer: View {
 
                 bottomBar
             }
+            .ignoresSafeArea(.container, edges: .top)
         }
         .task { await app.store.preparePaywall() }
         .onAppear { AnalyticsService.shared.track("Onboarding Started") }
@@ -31,7 +32,7 @@ struct OnboardingContainer: View {
         VStack(spacing: 10) {
             PageDots(count: 3, current: page)
 
-            PrimaryCapsuleButton(title: page == 2 ? "Start Listening" : "Continue", isBusy: preparing, isEnabled: !preparing) {
+            PrimaryCapsuleButton(title: "Continue", isBusy: preparing, isEnabled: !preparing) {
                 if page < 2 {
                     withAnimation(.easeInOut(duration: 0.25)) {
                         page += 1
@@ -45,6 +46,7 @@ struct OnboardingContainer: View {
             OnboardingLegalFooter()
                 .opacity(page == 0 ? 1 : 0)
                 .allowsHitTesting(page == 0)
+                .accessibilityHidden(page != 0)
                 .frame(height: 42)
         }
         .padding(.top, 6)
@@ -70,26 +72,32 @@ struct PageDots: View {
     var body: some View {
         HStack(spacing: 8) {
             ForEach(0..<count, id: \.self) { index in
-                Capsule()
+                Circle()
                     .fill(index == current ? AppPalette.primary : Color.gray.opacity(0.28))
-                    .frame(width: index == current ? 22 : 8, height: 8)
+                    .frame(width: 8, height: 8)
                     .animation(.easeInOut(duration: 0.2), value: current)
             }
         }
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel("Step \(current + 1) of \(count)")
     }
 }
 
 private struct OnboardingLegalFooter: View {
     var body: some View {
-        VStack(spacing: 4) {
-            Text("By proceeding, you accept")
+        VStack(spacing: 2) {
+            Text("By Proceeding You Accept")
                 .foregroundColor(AppPalette.sheetMuted)
                 .font(AppTypography.medium(12))
 
-            HStack(spacing: 18) {
-                legalLink("Terms of Use", url: AppLinks.termsOfUse)
+            HStack(spacing: 4) {
+                Text("Our")
+                legalLink("Terms Of Use", url: AppLinks.termsOfUse)
+                Text("And")
                 legalLink("Privacy Policy", url: AppLinks.privacyPolicy)
             }
+            .foregroundStyle(AppPalette.sheetMuted)
+            .font(AppTypography.medium(12))
         }
         .multilineTextAlignment(.center)
     }

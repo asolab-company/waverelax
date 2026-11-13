@@ -11,6 +11,7 @@ final class SoundSession {
     var isPlaying: Bool { status.isAudible }
 
     private let engine: LoopingPlaybackEngine
+    let haptics = SessionHaptics()
     private let preferences: PlaybackPreferences
     private var commandTail: Task<Void, Never>?
     private let observerBag = NotificationObserverBag()
@@ -53,6 +54,7 @@ final class SoundSession {
         let tempo = preferences.tempo
         let gain = preferences.intensity.rawValue
 
+        syncHaptics()
         enqueue { [engine] in
             await engine.applyRate(tempo)
             await engine.applyGain(gain)
@@ -62,6 +64,7 @@ final class SoundSession {
 
     func stop() {
         status = .idle
+        haptics.stop()
         enqueue { [engine] in
             await engine.halt()
         }
@@ -72,6 +75,7 @@ final class SoundSession {
     }
 
     func syncLiveAudioParameters() {
+        syncHaptics()
         let tempo = preferences.tempo
         let gain = preferences.intensity.rawValue
         enqueue { [engine] in
@@ -124,6 +128,7 @@ final class SoundSession {
 
         switch type {
         case .began:
+            haptics.stop()
             if case .playing(let id) = status {
                 status = .interrupted(id)
                 enqueue { [engine] in
@@ -146,6 +151,7 @@ final class SoundSession {
     }
 
     private func handleMediaReset() {
+        haptics.stop()
         let restore = selectedMode
         let wasPlaying: Bool
         switch status {
@@ -161,6 +167,14 @@ final class SoundSession {
             guard let self, wasPlaying, let restore else { return }
             self.play(restore)
         }
+    }
+
+    private func syncHaptics() {
+        guard isPlaying, preferences.vibrationsEnabled, let selectedMode else {
+            haptics.stop()
+            return
+        }
+        haptics.play(mode: selectedMode.id, intensity: preferences.intensity.rawValue, tempo: preferences.tempo)
     }
 
     private func enqueue(

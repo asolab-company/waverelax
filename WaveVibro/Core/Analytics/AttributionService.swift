@@ -9,6 +9,7 @@ final class AttributionService {
     private var sessionReady = false
     private var isRequestingATT = false
     private var hasStartedForegroundSession = false
+    var canLogEvents: Bool { isConfigured && hasStartedForegroundSession }
 
     private init() {}
 
@@ -17,7 +18,11 @@ final class AttributionService {
         isConfigured = true
         let sdk = AppsFlyerLib.shared()
         sdk.isDebug = false
+        #if targetEnvironment(simulator)
+        sdk.useReceiptValidationSandbox = true
+        #else
         sdk.useReceiptValidationSandbox = false
+        #endif
         sdk.useUninstallSandbox = false
         sdk.initialize(
             devKey: AppConfiguration.Analytics.appsFlyerDevKey,
@@ -33,7 +38,6 @@ final class AttributionService {
     }
 
     func applicationDidBecomeActive() {
-        // ATT must not depend on whether the optional AppsFlyer key is configured.
         guard !isRequestingATT else { return }
         guard ATTrackingManager.trackingAuthorizationStatus == .notDetermined else {
             startSessionIfReady()
@@ -67,6 +71,8 @@ final class AttributionService {
         sessionReady = false
         hasStartedForegroundSession = true
         AppsFlyerLib.shared().start()
+        SubscriptionAnalyticsService.shared.flushAttributionEvents()
+        Task { await AdaptyService.shared.syncIdentifiers() }
     }
 
     private static func statusName(_ status: ATTrackingManager.AuthorizationStatus) -> String {

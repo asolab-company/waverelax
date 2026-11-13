@@ -6,196 +6,208 @@ struct PaywallScreen: View {
     var onFinished: (() -> Void)? = nil
     @Environment(AppEnvironment.self) private var app
     @Environment(\.dismiss) private var dismiss
-    @State private var selectedPlan: AccessPlan = .weekly
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
     @State private var isPurchasing = false
+    @State private var isRestoring = false
+    @State private var hasAppeared = false
 
     var body: some View {
-        GeometryReader { geo in
-            ZStack(alignment: .top) {
-                paywallBackground
+        ZStack {
+            PremiumPaywallBackground()
 
-                ScrollView(showsIndicators: false) {
-                    VStack(spacing: 0) {
-                        topBar
+            ScrollView(showsIndicators: false) {
+                VStack(spacing: 24) {
+                    topBar
+                    introduction
+                        .modifier(PaywallEntrance(isVisible: hasAppeared))
 
-                        VStack(spacing: 8) {
-                            Text("Unlimited Access")
-                                .font(AppTypography.heavy(30, relativeTo: .title))
-                                .foregroundColor(.white)
-                                .multilineTextAlignment(.center)
-
-                            Text("Everything you need for your perfect sound session")
-                                .font(AppTypography.regular(15))
-                                .foregroundColor(.white.opacity(0.82))
-                                .multilineTextAlignment(.center)
-                        }
-                        .padding(.horizontal, 30)
-
-                        Color.clear
-                            .frame(height: max(geo.size.height * 0.065, 52))
-
-                        VStack(spacing: 16) {
-                            perksCard
-
-                            VStack(spacing: 10) {
-                                ForEach(AccessPlan.allCases, id: \.self) { plan in
-                                    AccessPlanCard(
-                                        title: plan.title,
-                                        subtitle: subtitle(for: plan),
-                                        badgeText: plan.badgeText,
-                                        isSelected: selectedPlan == plan,
-                                        style: plan.style
-                                    ) {
-                                        selectedPlan = plan
-                                        AnalyticsService.shared.track("Plan Selected", properties: ["plan": plan.title])
-                                    }
-                                }
-                            }
-
-                            PrimaryCapsuleButton(
-                                title: "Continue",
-                                isBusy: isPurchasing,
-                                isEnabled: !isPurchasing && product(for: selectedPlan) != nil,
-                                action: purchase
-                            )
-                            .padding(.top, 2)
-
-                            if let message = app.store.errorMessage {
-                                Text(message).font(AppTypography.regular(13)).foregroundStyle(AppPalette.primaryDeep)
-                                    .multilineTextAlignment(.center).accessibilityLabel(message)
-                                if app.store.products.isEmpty && !app.store.isLoadingProducts {
-                                    Button("Retry loading offers") { Task { await app.store.fetchProducts() } }
-                                        .foregroundStyle(AppPalette.primary)
-                                }
-                            }
-                            footerActions
-                        }
-                        .padding(.horizontal, 30)
-                        .padding(.bottom, 24)
+                    LazyVGrid(columns: columns, spacing: 12) {
+                        PremiumPaywallTile(artwork: "paywall_modes", title: "All 12 modes", detail: "Explore every sound & vibration rhythm")
+                            .modifier(PaywallEntrance(isVisible: hasAppeared, delay: 0.04))
+                        PremiumPaywallTile(artwork: "paywall_intensity", title: "Every intensity", detail: "From gentle pulses to a stronger feel")
+                            .modifier(PaywallEntrance(isVisible: hasAppeared, delay: 0.08))
+                        PremiumPaywallTile(artwork: "paywall_control", title: "Full control", detail: "Fine-tune the pace of every session")
+                            .modifier(PaywallEntrance(isVisible: hasAppeared, delay: 0.12))
+                        PremiumPaywallTile(artwork: "paywall_weekly", title: "Weekly Access", detail: weeklyPrice)
+                            .accessibilityIdentifier("paywall.weeklyOffer")
+                            .modifier(PaywallEntrance(isVisible: hasAppeared, delay: 0.16))
                     }
-                    .frame(minHeight: geo.size.height)
+
+                    Text("Subscription auto-renews. Cancel anytime.")
+                        .font(AppTypography.regular(12))
+                        .foregroundStyle(PaywallStyle.secondary)
+                        .multilineTextAlignment(.center)
                 }
+                .padding(.horizontal, 24)
+                .padding(.bottom, 20)
+                .frame(maxWidth: 520)
+                .frame(maxWidth: .infinity)
+            }
+            .scrollBounceBehavior(.basedOnSize)
+            .safeAreaInset(edge: .bottom, spacing: 0) {
+                purchaseActions
             }
         }
         .task { await app.store.preparePaywall() }
-        .onAppear { AnalyticsService.shared.track("Paywall Viewed", properties: ["source": onFinished == nil ? "settings_or_feature" : "startup"]) }
+        .onAppear {
+            hasAppeared = true
+            AnalyticsService.shared.track("Paywall Viewed", properties: [
+                "source": onFinished == nil ? "settings_or_feature" : "startup",
+                "format": "native_grid_weekly"
+            ])
+        }
         .onChange(of: app.store.isSubscribed) { _, active in if active { finish() } }
+        .interactiveDismissDisabled(isPurchasing || isRestoring)
     }
 
-    private func finish() { if let onFinished { onFinished() } else { dismiss() } }
-
-    private var paywallBackground: some View {
-        ZStack(alignment: .top) {
-            AppPalette.sheetBackground
-                .ignoresSafeArea()
-
-            StaticPaywallArtwork()
-                .ignoresSafeArea()
+    private var columns: [GridItem] {
+        if dynamicTypeSize.isAccessibilitySize {
+            [GridItem(.flexible(), alignment: .topLeading)]
+        } else {
+            [GridItem(.flexible(), spacing: 12, alignment: .topLeading), GridItem(.flexible(), spacing: 12, alignment: .topLeading)]
         }
+    }
+
+    private var introduction: some View {
+        VStack(spacing: 12) {
+            Text("Unlimited Access")
+                .font(AppTypography.medium(32))
+                .tracking(-0.7)
+                .foregroundStyle(.white)
+
+            Text("Your perfect sound & vibration session")
+                .font(AppTypography.regular(15))
+                .foregroundStyle(.white.opacity(0.85))
+                .frame(maxWidth: 270)
+
+            SessionWaveform()
+                .stroke(
+                    LinearGradient(colors: [.white.opacity(0.1), .white.opacity(0.8), .white.opacity(0.1)], startPoint: .leading, endPoint: .trailing),
+                    style: StrokeStyle(lineWidth: 1.4, lineCap: .round)
+                )
+                .frame(width: 152, height: 24)
+                .padding(.top, 6)
+                .accessibilityHidden(true)
+        }
+        .multilineTextAlignment(.center)
+    }
+
+    private var weeklyPrice: String {
+        guard let product = app.store.weeklyProduct else {
+            return app.store.isLoadingProducts ? "Loading price…" : "Offer unavailable"
+        }
+        return app.store.priceLine(for: product)
     }
 
     private var topBar: some View {
-        ZStack {
-            HStack {
-                closeButton
-                Spacer()
+        HStack(spacing: 7) {
+            Image(systemName: "waveform")
+                .font(.system(size: 13, weight: .medium))
+                .foregroundStyle(.white.opacity(0.9))
+                .accessibilityHidden(true)
+            Text("WaveRelax")
+                .font(AppTypography.medium(15))
+                .tracking(0.4)
+                .foregroundStyle(.white)
+        }
+        .dynamicTypeSize(...DynamicTypeSize.xxxLarge)
+        .frame(maxWidth: .infinity, minHeight: 44)
+        .padding(.top, 4)
+    }
+
+    private var purchaseActions: some View {
+        VStack(spacing: 8) {
+            if let message = app.store.errorMessage {
+                VStack(spacing: 6) {
+                    Text(message)
+                        .font(AppTypography.regular(13))
+                        .multilineTextAlignment(.center)
+                    if app.store.products.isEmpty && !app.store.isLoadingProducts {
+                        Button("Retry loading offers") { Task { await app.store.fetchProducts() } }
+                            .font(AppTypography.medium(14))
+                            .frame(minHeight: 44)
+                    }
+                }
+                .foregroundStyle(PaywallStyle.foreground)
             }
 
-            Text("WaveVibro")
-                .font(AppTypography.medium(15))
-                .foregroundColor(.white.opacity(0.82))
+            Button(action: purchase) {
+                HStack(spacing: 12) {
+                    if isPurchasing {
+                        ProgressView().tint(.white)
+                    }
+                    Text(isPurchasing ? "Processing…" : "Continue")
+                        .font(AppTypography.medium(17))
+                    Image(systemName: "arrow.right")
+                        .font(.system(size: 15, weight: .medium))
+                        .accessibilityHidden(true)
+                }
+                .foregroundStyle(.white)
+                .frame(maxWidth: .infinity, minHeight: 56)
+                .background {
+                    RoundedRectangle(cornerRadius: 28, style: .continuous)
+                        .fill(AppPalette.primary)
+                        .overlay {
+                            PaywallButtonShimmer(isEnabled: !isPurchasing && !isRestoring && app.store.weeklyProduct != nil)
+                                .clipShape(RoundedRectangle(cornerRadius: 28, style: .continuous))
+                        }
+                }
+                .contentShape(RoundedRectangle(cornerRadius: 28, style: .continuous))
+            }
+            .buttonStyle(PaywallPurchaseButtonStyle())
+            .disabled(isPurchasing || isRestoring || app.store.weeklyProduct == nil)
+            .opacity(isPurchasing || isRestoring || app.store.weeklyProduct == nil ? 0.55 : 1)
+            .accessibilityIdentifier("paywall.continue")
+
+            footerActions
         }
-        .frame(height: 44)
-        .padding(.horizontal, 22)
-        .padding(.top, 8)
-        .padding(.bottom, 10)
-    }
-
-    private var closeButton: some View {
-        Button(action: finish) {
-            Image(systemName: "xmark")
-                .font(.system(size: 17, weight: .medium))
-                .foregroundStyle(Color.white.opacity(0.68))
-                .frame(width: 44, height: 44)
-                .contentShape(Rectangle())
+        .padding(.horizontal, 24)
+        .padding(.top, 16)
+        .padding(.bottom, 4)
+        .frame(maxWidth: 520)
+        .frame(maxWidth: .infinity)
+        .background {
+            PaywallStyle.background
+                .ignoresSafeArea(edges: .bottom)
+                .overlay(alignment: .top) {
+                    Rectangle().fill(PaywallStyle.foreground.opacity(0.07)).frame(height: 0.5)
+                }
         }
-        .buttonStyle(.plain)
-        .offset(y: -12)
-        .accessibilityLabel("Close")
-    }
-
-    private var perksCard: some View {
-        VStack(alignment: .leading, spacing: 14) {
-            FeatureHighlightRow(
-                icon: "ic_check",
-                title: "All 12 sound modes",
-                description: "Explore every sound world without limits"
-            )
-
-            Divider()
-                .overlay(AppPalette.primary.opacity(0.10))
-
-            FeatureHighlightRow(
-                icon: "ic_check",
-                title: "Every intensity level",
-                description: "Adjust loudness to match your preference"
-            )
-
-            Divider()
-                .overlay(AppPalette.primary.opacity(0.10))
-
-            FeatureHighlightRow(
-                icon: "ic_check",
-                title: "Full playback control",
-                description: "Set the pace from gentle to intense"
-            )
-        }
-        .padding(.horizontal, 18)
-        .padding(.vertical, 16)
-        .background(
-            RoundedRectangle(cornerRadius: 24, style: .continuous)
-                .fill(Color.white.opacity(0.82))
-        )
-        .overlay(
-            RoundedRectangle(cornerRadius: 24, style: .continuous)
-                .stroke(Color.white.opacity(0.9), lineWidth: 1)
-        )
     }
 
     private var footerActions: some View {
-        VStack(spacing: 13) {
-            HStack(spacing: 8) {
-                Image("ic_shield")
-                    .resizable()
-                    .scaledToFit()
-                    .frame(width: 19, height: 19)
-
-                Text("Auto-renewable · Cancel anytime")
-                    .font(AppTypography.medium(12))
-            }
-            .foregroundColor(AppPalette.primary)
-
-            HStack(spacing: 26) {
-                actionLink("Privacy") { open(AppLinks.privacyPolicy) }
-
-                if !app.store.isSubscribed {
-                    actionLink("Restore") {
-                        Task {
-                            await app.store.restore()
-                            await app.store.refreshEntitlements()
-                        }
-                    }
+        HStack(spacing: 0) {
+            actionLink("Privacy") { open(AppLinks.privacyPolicy) }
+            Spacer(minLength: 8)
+            actionLink("Skip", action: finish)
+            Spacer(minLength: 8)
+            actionLink(isRestoring ? "Restoring…" : "Restore") {
+                guard !isRestoring else { return }
+                isRestoring = true
+                Task {
+                    await app.store.restore()
+                    isRestoring = false
                 }
-
-                actionLink("Terms") { open(AppLinks.termsOfUse) }
             }
+            Spacer(minLength: 8)
+            actionLink("Terms") { open(AppLinks.termsOfUse) }
         }
+        .disabled(isPurchasing || isRestoring)
+    }
+
+    private func actionLink(_ title: String, action: @escaping () -> Void) -> some View {
+        Button(action: action) {
+            Text(title)
+                .font(AppTypography.regular(12))
+                .foregroundStyle(PaywallStyle.secondary)
+                .frame(minHeight: 44)
+        }
+        .buttonStyle(.plain)
     }
 
     private func purchase() {
-        guard let product = product(for: selectedPlan), !isPurchasing else { return }
+        guard let product = app.store.weeklyProduct, !isPurchasing else { return }
         isPurchasing = true
-
         Task {
             let outcome = await app.store.purchase(product: product)
             isPurchasing = false
@@ -208,139 +220,156 @@ struct PaywallScreen: View {
         }
     }
 
-    private func subtitle(for plan: AccessPlan) -> String {
-        guard let product = product(for: plan) else { return "Loading price…" }
-        return app.store.priceLine(for: product)
-    }
-
-    private func actionLink(_ title: String, action: @escaping () -> Void) -> some View {
-        Button(action: action) {
-            Text(title)
-                .font(AppTypography.regular(13))
-                .foregroundColor(AppPalette.sheetMuted)
-        }
-        .buttonStyle(.plain)
-    }
-
-    private func product(for plan: AccessPlan) -> Product? {
-        switch plan {
-        case .weekly: return app.store.weeklyProduct
-        case .yearly: return app.store.yearlyProduct
-        }
-    }
-
+    private func finish() { if let onFinished { onFinished() } else { dismiss() } }
     private func open(_ url: URL?) {
         guard let url else { return }
         UIApplication.shared.open(url)
     }
 }
 
-private struct StaticPaywallArtwork: View {
+private struct PremiumPaywallTile: View {
+    let artwork: String
+    let title: String
+    let detail: String
+
     var body: some View {
-        GeometryReader { geo in
-            Image("paywall_top")
+        VStack(alignment: .leading, spacing: 12) {
+            Image(artwork)
                 .resizable()
                 .scaledToFit()
-                .saturation(0)
-                .colorMultiply(AppPalette.primary)
-                .frame(width: geo.size.width * 1.14 + 4)
-                .frame(width: geo.size.width, alignment: .top)
-                .clipped()
+                .frame(height: 72)
+                .frame(maxWidth: .infinity)
+                .accessibilityHidden(true)
+
+            VStack(alignment: .leading, spacing: 7) {
+                Text(title)
+                    .font(AppTypography.medium(16))
+                    .foregroundStyle(PaywallStyle.foreground)
+                Text(detail)
+                    .font(AppTypography.regular(13))
+                    .foregroundStyle(PaywallStyle.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+        }
+        .padding(18)
+        .frame(maxWidth: .infinity, minHeight: 184, alignment: .topLeading)
+        .background(PaywallStyle.surface, in: RoundedRectangle(cornerRadius: 18, style: .continuous))
+        .overlay {
+            RoundedRectangle(cornerRadius: 18, style: .continuous)
+                .stroke(AppPalette.primary.opacity(0.18), lineWidth: 0.75)
+        }
+        .accessibilityElement(children: .combine)
+    }
+}
+
+private struct PremiumPaywallBackground: View {
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
+
+    var body: some View {
+        ZStack(alignment: .top) {
+            AppPalette.sheetBackground.ignoresSafeArea()
+            GeometryReader { geometry in
+                Image("paywall_top")
+                    .resizable()
+                    .scaledToFit()
+                    .saturation(0)
+                    .colorMultiply(AppPalette.primary)
+                    .frame(width: geometry.size.width * 1.14 + 4)
+                    .frame(width: geometry.size.width, alignment: .top)
+                    .clipped()
+                    .scaleEffect(x: 1, y: dynamicTypeSize.isAccessibilitySize ? 2 : 1.15, anchor: .top)
+            }
+            .ignoresSafeArea()
         }
         .allowsHitTesting(false)
         .accessibilityHidden(true)
     }
 }
 
-enum AccessPlan: CaseIterable {
-    case weekly
-    case yearly
-
-    var title: String {
-        switch self {
-        case .weekly: return "Weekly Access"
-        case .yearly: return "Yearly Access"
+private struct SessionWaveform: Shape {
+    func path(in rect: CGRect) -> Path {
+        var path = Path()
+        for index in 0...160 {
+            let progress = Double(index) / 160
+            let envelope = pow(sin(progress * .pi), 2)
+            let wave = sin(progress * .pi * 12) * envelope
+            let point = CGPoint(x: rect.minX + rect.width * progress, y: rect.midY + wave * rect.height * 0.45)
+            if index == 0 { path.move(to: point) } else { path.addLine(to: point) }
         }
-    }
-
-    var badgeText: String {
-        switch self {
-        case .weekly: return "POPULAR"
-        case .yearly: return "BEST VALUE"
-        }
-    }
-
-    var style: PlanCardStyle {
-        switch self {
-        case .weekly: return .popular
-        case .yearly: return .featured
-        }
+        return path
     }
 }
 
-enum PlanCardStyle {
-    case popular
-    case featured
+private struct PaywallPurchaseButtonStyle: ButtonStyle {
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+
+    func makeBody(configuration: Configuration) -> some View {
+        configuration.label
+            .opacity(configuration.isPressed ? 0.85 : 1)
+            .scaleEffect(configuration.isPressed && !reduceMotion ? 0.985 : 1)
+            .animation(reduceMotion ? nil : PaywallMotion.press, value: configuration.isPressed)
+    }
 }
 
-private struct AccessPlanCard: View {
-    let title: String
-    let subtitle: String
-    let badgeText: String
-    let isSelected: Bool
-    let style: PlanCardStyle
-    let action: () -> Void
+private struct PaywallEntrance: ViewModifier {
+    let isVisible: Bool
+    var delay: Double = 0
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+
+    func body(content: Content) -> some View {
+        content
+            .opacity(reduceMotion || isVisible ? 1 : 0.8)
+            .offset(y: reduceMotion || isVisible ? 0 : 6)
+            .animation(reduceMotion ? nil : PaywallMotion.arrival.delay(delay), value: isVisible)
+    }
+}
+
+private struct PaywallButtonShimmer: View {
+    let isEnabled: Bool
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(\.scenePhase) private var scenePhase
+    @State private var pass = 0
+
+    private var isAnimating: Bool { isEnabled && !reduceMotion && scenePhase == .active }
 
     var body: some View {
-        Button(action: action) {
-            HStack(spacing: 14) {
-                ZStack {
-                    Circle()
-                        .stroke(AppPalette.primary.opacity(isSelected ? 1 : 0.5), lineWidth: 2)
-                        .frame(width: 24, height: 24)
-
-                    if isSelected {
-                        Circle()
-                            .fill(AppPalette.primary)
-                            .frame(width: 14, height: 14)
+        GeometryReader { geometry in
+            if isAnimating {
+                Rectangle()
+                    .fill(LinearGradient(colors: [.clear, .white.opacity(0.18), .clear], startPoint: .leading, endPoint: .trailing))
+                    .frame(width: geometry.size.width * 0.35, height: geometry.size.height * 2)
+                    .rotationEffect(.degrees(18))
+                    .position(x: geometry.size.width / 2, y: geometry.size.height / 2)
+                    .phaseAnimator([false, true], trigger: pass) { content, crossed in
+                        content.offset(x: (crossed ? 1 : -1) * geometry.size.width)
+                    } animation: { crossed in
+                        crossed ? .linear(duration: 1.2) : nil
                     }
-                }
-
-                VStack(alignment: .leading, spacing: 2) {
-                    Text(title)
-                        .font(AppTypography.medium(16))
-                    Text(subtitle)
-                        .font(AppTypography.regular(13))
-                }
-                .foregroundColor(.black)
-
-                Spacer()
-
-                Text(badgeText)
-                    .font(AppTypography.bold(11))
-                    .foregroundColor(style == .popular ? AppPalette.primary : .white)
-                    .padding(.horizontal, 14)
-                    .padding(.vertical, 7)
-                    .background(
-                        Capsule()
-                            .fill(style == .popular ? Color.white : AppPalette.primary)
-                    )
             }
-            .padding(.horizontal, 18)
-            .frame(height: 64)
-            .background(
-                RoundedRectangle(cornerRadius: 32, style: .continuous)
-                    .fill(isSelected ? AppPalette.primary.opacity(0.13) : Color.white.opacity(0.48))
-            )
-            .overlay(
-                RoundedRectangle(cornerRadius: 32, style: .continuous)
-                    .stroke(
-                        AppPalette.primary.opacity(isSelected ? 1 : 0.55),
-                        lineWidth: isSelected ? 2.5 : 1.25
-                    )
-            )
         }
-        .buttonStyle(.plain)
-        .accessibilityAddTraits(isSelected ? .isSelected : [])
+        .allowsHitTesting(false)
+        .accessibilityHidden(true)
+        .task(id: isAnimating) {
+            guard isAnimating else { return }
+            do {
+                try await Task.sleep(for: .seconds(4.5))
+                while !Task.isCancelled {
+                    pass += 1
+                    try await Task.sleep(for: .seconds(6))
+                }
+            } catch { return }
+        }
     }
+}
+
+private enum PaywallMotion {
+    static let arrival = Animation.timingCurve(0.23, 1, 0.32, 1, duration: 0.28)
+    static let press = Animation.timingCurve(0.23, 1, 0.32, 1, duration: 0.14)
+}
+
+private enum PaywallStyle {
+    static let background = AppPalette.sheetBackground
+    static let surface = Color.white
+    static let foreground = AppPalette.primaryDeep
+    static let secondary = AppPalette.primaryDeep.opacity(0.8)
 }

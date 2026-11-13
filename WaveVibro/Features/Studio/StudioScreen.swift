@@ -16,6 +16,7 @@ struct StudioScreen: View {
 
                 IntensitySegment()
                 TempoTrack()
+                vibrationControl
                 ModeCarousel(hidesSelection: app.screenLock.isPresented)
 
                 Spacer()
@@ -46,4 +47,22 @@ struct StudioScreen: View {
         }
     }
 
+    private var vibrationControl: some View {
+        @Bindable var preferences = app.preferences
+        return VStack(alignment: .leading, spacing: 4) {
+            Toggle("Vibrations", isOn: $preferences.vibrationsEnabled)
+                .font(AppTypography.medium(15))
+                .tint(.white.opacity(0.35))
+                .foregroundStyle(.white)
+                .disabled(!app.session.haptics.isSupported)
+            if !app.session.haptics.isSupported {
+                Text("Vibrations require a supported iPhone.")
+                    .font(AppTypography.regular(12))
+                    .foregroundStyle(.white.opacity(0.75))
+            } else if let message = app.session.haptics.errorMessage {
+                Text(message).font(AppTypography.regular(12)).foregroundStyle(.white)
+            }
+        }
+        .padding(.horizontal, 28)
+    }
 }

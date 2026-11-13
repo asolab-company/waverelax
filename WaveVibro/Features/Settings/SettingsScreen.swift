@@ -36,7 +36,7 @@ struct SettingsScreen: View {
             }
         }
         .sheet(isPresented: $isWebRestorePresented) { RestoreWebSubscriptionView().environment(app) }
-        .alert(notice?.title ?? "WaveVibro", isPresented: Binding(
+        .alert(notice?.title ?? "WaveRelax", isPresented: Binding(
             get: { notice != nil }, set: { if !$0 { notice = nil } }
         ), presenting: notice) { notice in
             if case .contact = notice {
@@ -208,7 +208,7 @@ private struct RatingPrompt: View {
                     .scaledToFit()
                     .frame(height: 54)
 
-                Text("How is your WaveVibro experience?")
+                Text("How is your WaveRelax experience?")
                     .font(AppTypography.bold(23))
                     .multilineTextAlignment(.center)
                     .foregroundColor(.white)

@@ -21,7 +21,6 @@ struct WaveVibroApp: App {
                     }
                 }
                 .onReceive(NotificationCenter.default.publisher(for: UIApplication.didBecomeActiveNotification)) { _ in
-                    // The SwiftUI scene can become active before UIKit is ready to present ATT.
                     AttributionService.shared.applicationDidBecomeActive()
                 }
         }

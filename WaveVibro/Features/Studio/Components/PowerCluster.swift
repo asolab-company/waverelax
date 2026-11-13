@@ -18,7 +18,7 @@ struct PowerCluster: View {
                         .frame(width: powerSize)
                 }
                 .position(x: width / 2, y: height / 2)
-                .accessibilityLabel(app.session.isPlaying ? "Stop sound" : "Play sound")
+                .accessibilityLabel(app.session.isPlaying ? "Stop session" : "Start session")
 
                 Button {
                     isLockArmed.toggle()

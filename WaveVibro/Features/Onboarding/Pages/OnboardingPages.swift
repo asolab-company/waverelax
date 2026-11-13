@@ -2,176 +2,157 @@ import SwiftUI
 
 struct WelcomeOnboardingPage: View {
     var body: some View {
-        OnboardingPageFrame(
-            hero: {
-                VStack(spacing: 16) {
-                    Image("onboarding_audio_v2")
-                        .resizable()
-                        .scaledToFit()
-                        .frame(maxWidth: 176)
-
-                    VStack(spacing: 8) {
-                        Text("Welcome to\nWaveVibro")
-                            .font(AppTypography.heavy(28, relativeTo: .largeTitle))
-                            .foregroundColor(AppPalette.primary)
-                            .multilineTextAlignment(.center)
-
-                        Text("A guided audio space for mood, rhythm, and focused relaxation.")
-                            .font(AppTypography.regular(15))
-                            .foregroundColor(.black.opacity(0.72))
-                            .multilineTextAlignment(.center)
-                    }
-                }
-            },
-            bodyContent: {
-                VStack(spacing: 12) {
-                    FeatureHighlightRow(
-                        icon: "ic_time",
-                        title: "Ready-made Sessions",
-                        description: "Start quickly with sound scenes built for calm, focus, and reset."
-                    )
-                    FeatureHighlightRow(
-                        icon: "ic_bolt",
-                        title: "Intensity Control",
-                        description: "Shape each session from soft ambience to a fuller, stronger feel."
-                    )
-                    FeatureHighlightRow(
-                        icon: "ic_speed",
-                        title: "Speed Control",
-                        description: "Slow things down or increase the pace until it matches your mood."
-                    )
-                }
-                .padding(16)
-                .background(
-                    RoundedRectangle(cornerRadius: 24, style: .continuous)
-                        .fill(AppPalette.primary.opacity(0.14))
-                )
-            }
-        )
-    }
-}
-
-struct ControlOnboardingPage: View {
-    var body: some View {
-        OnboardingPageFrame(
-            hero: {
-                Image("onboarding_lock_v2")
-                    .resizable()
-                    .scaledToFit()
-                    .frame(maxHeight: 276)
-            },
-            bodyContent: {
-                VStack(spacing: 12) {
-                    Text("Stay in\nControl")
-                        .font(AppTypography.heavy(28, relativeTo: .largeTitle))
-                        .foregroundColor(AppPalette.primary)
-                        .multilineTextAlignment(.center)
-
-                    Text("Use screen lock to prevent accidental interruptions and keep your session flowing.")
-                        .font(AppTypography.regular(15))
-                        .foregroundColor(.black.opacity(0.72))
-                        .multilineTextAlignment(.center)
-
-                    HStack(spacing: 10) {
-                        BenefitChip(text: "Lock Screen")
-                        BenefitChip(text: "Hands-Free")
-                        BenefitChip(text: "No Interruptions")
-                    }
-                    .padding(.top, 4)
-                }
-            }
-        )
-    }
-}
-
-struct CustomizeOnboardingPage: View {
-    var body: some View {
-        OnboardingPageFrame(
-            hero: {
-                Image("onboarding_customize_v2")
-                    .resizable()
-                    .scaledToFit()
-                    .frame(maxHeight: 276)
-            },
-            bodyContent: {
-                VStack(spacing: 12) {
-                    Text("Make it\nyours")
-                        .font(AppTypography.heavy(28, relativeTo: .largeTitle))
-                        .foregroundColor(AppPalette.primary)
-                        .multilineTextAlignment(.center)
-
-                    Text("Pick from 12 sound modes and fine-tune speed and intensity until it feels right.")
-                        .font(AppTypography.regular(15))
-                        .foregroundColor(.black.opacity(0.72))
-                        .multilineTextAlignment(.center)
-
-                    HStack(spacing: 12) {
-                        MiniStat(title: "Modes", value: "12")
-                        MiniStat(title: "Speed", value: "Live")
-                        MiniStat(title: "Intensity", value: "3")
-                    }
-                    .padding(.top, 4)
-                }
-            }
-        )
-    }
-}
-
-private struct OnboardingPageFrame<Hero: View, BodyContent: View>: View {
-    @ViewBuilder let hero: Hero
-    @ViewBuilder let bodyContent: BodyContent
-
-    var body: some View {
-        GeometryReader { geo in
+        GeometryReader { geometry in
             ScrollView(.vertical, showsIndicators: false) {
-                VStack(spacing: 20) {
-                    hero
-                    bodyContent
+                VStack(spacing: 0) {
+                    OnboardingArtwork(name: "onboarding_welcome")
+                        .frame(width: min(geometry.size.width * 0.54, 230), height: min(geometry.size.width * 0.54, 230))
+                        .padding(.top, geometry.size.height * 0.1)
+
+                    OnboardingHeading(title: "Welcome to\nthe WaveRelax")
+                        .padding(.top, 20)
+
+                    VStack(alignment: .leading, spacing: 14) {
+                        OnboardingFeatureRow(
+                            icon: "ic_time",
+                            title: "Pre-programmed Sessions",
+                            description: "Take advantage of pre-programmed sessions specially designed for you."
+                        )
+                        OnboardingFeatureRow(
+                            icon: "ic_bolt",
+                            title: "Intensity Control",
+                            description: "Easily adjust the intensity of massage sessions to match your comfort level."
+                        )
+                        OnboardingFeatureRow(
+                            icon: "ic_speed",
+                            title: "Speed Control",
+                            description: "Easily change the speed of massage patterns to get the best experience."
+                        )
+                    }
+                    .padding(20)
+                    .background(AppPalette.primary.opacity(0.14), in: RoundedRectangle(cornerRadius: 24))
+                    .padding(.top, 24)
+                    .padding(.horizontal, geometry.size.width * 0.06)
                 }
-                .padding(.horizontal, geo.size.width * 0.07)
-                .padding(.vertical, 12)
+                .padding(.bottom, 12)
                 .frame(maxWidth: .infinity)
-                .frame(minHeight: geo.size.height, alignment: .center)
+                .frame(minHeight: geometry.size.height, alignment: .top)
             }
             .scrollBounceBehavior(.basedOnSize)
         }
     }
 }
 
-private struct BenefitChip: View {
-    let text: String
-
+struct ControlOnboardingPage: View {
     var body: some View {
-        Text(text)
-            .font(AppTypography.medium(12))
-            .foregroundColor(AppPalette.primary)
-            .padding(.horizontal, 12)
-            .padding(.vertical, 8)
-            .background(
-                Capsule()
-                    .fill(AppPalette.primary.opacity(0.12))
-            )
+        IllustratedOnboardingPage(
+            imageName: "onb_2",
+            title: "Stay in\nControl",
+            description: "Use screen lock to prevent accidental interruptions and enjoy uninterrupted relaxation."
+        )
     }
 }
 
-private struct MiniStat: View {
+struct CustomizeOnboardingPage: View {
+    var body: some View {
+        IllustratedOnboardingPage(
+            imageName: "onb_3",
+            title: "Customize your\nexperience",
+            description: "Choose from 12 unique vibration modes and easily adjust the speed and intensity to match your mood."
+        )
+    }
+}
+
+private struct IllustratedOnboardingPage: View {
+    let imageName: String
     let title: String
-    let value: String
+    let description: String
 
     var body: some View {
-        VStack(spacing: 4) {
-            Text(value)
-                .font(AppTypography.bold(16))
-                .foregroundColor(AppPalette.primary)
-            Text(title)
-                .font(AppTypography.regular(11))
-                .foregroundColor(.black.opacity(0.56))
+        GeometryReader { geometry in
+            ScrollView(.vertical, showsIndicators: false) {
+                VStack(spacing: 0) {
+                    OnboardingArtwork(name: imageName)
+                        .frame(height: min(geometry.size.height * 0.77, geometry.size.width * 1.3))
+
+                    OnboardingHeading(title: title)
+                        .padding(.top, 20)
+
+                    Text(description)
+                        .font(AppTypography.regular(14))
+                        .foregroundStyle(.black)
+                        .multilineTextAlignment(.center)
+                        .fixedSize(horizontal: false, vertical: true)
+                        .padding(.top, 10)
+                        .padding(.horizontal, geometry.size.width * 0.06)
+                }
+                .padding(.bottom, 12)
+                .frame(maxWidth: .infinity)
+                .frame(minHeight: geometry.size.height, alignment: .top)
+            }
+            .scrollBounceBehavior(.basedOnSize)
         }
-        .frame(maxWidth: .infinity)
-        .padding(.vertical, 10)
-        .background(
-            RoundedRectangle(cornerRadius: 18, style: .continuous)
-                .fill(Color.white.opacity(0.72))
-        )
+    }
+}
+
+private struct OnboardingArtwork: View {
+    let name: String
+
+    private var image: some View {
+        Image(name)
+            .resizable()
+            .scaledToFit()
+    }
+
+    var body: some View {
+        image
+            .overlay {
+                AppPalette.primary.blendMode(.color)
+            }
+            .compositingGroup()
+            .mask(image)
+            .accessibilityHidden(true)
+    }
+}
+
+private struct OnboardingHeading: View {
+    let title: String
+
+    var body: some View {
+        Text(title)
+            .font(AppTypography.heavy(28, relativeTo: .largeTitle))
+            .foregroundStyle(AppPalette.primary)
+            .multilineTextAlignment(.center)
+            .fixedSize(horizontal: false, vertical: true)
+            .accessibilityAddTraits(.isHeader)
+            .frame(maxWidth: .infinity)
+    }
+}
+
+private struct OnboardingFeatureRow: View {
+    let icon: String
+    let title: String
+    let description: String
+
+    var body: some View {
+        HStack(alignment: .top, spacing: 10) {
+            Image(icon)
+                .renderingMode(.template)
+                .resizable()
+                .scaledToFit()
+                .frame(width: 20, height: 20)
+                .accessibilityHidden(true)
+
+            VStack(alignment: .leading, spacing: 4) {
+                Text(title)
+                    .font(AppTypography.heavy(16))
+                Text(description)
+                    .font(AppTypography.regular(14))
+            }
+            .fixedSize(horizontal: false, vertical: true)
+            .frame(maxWidth: .infinity, alignment: .leading)
+        }
+        .foregroundStyle(AppPalette.primary)
+        .accessibilityElement(children: .combine)
     }
 }

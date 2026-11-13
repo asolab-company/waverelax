@@ -33,7 +33,7 @@ final class StoreFront {
             for await update in Transaction.updates {
                 guard let self, !Task.isCancelled else { return }
                 if case .verified(let transaction) = update, self.productIDs.contains(transaction.productID) {
-                    SubscriptionAnalyticsService.shared.report(transaction)
+                    SubscriptionAnalyticsService.shared.report(update, recordsConversion: true)
                     await transaction.finish()
                     await self.refreshEntitlements()
                 }
@@ -108,7 +108,7 @@ final class StoreFront {
                   !transaction.isUpgraded, (transaction.expirationDate ?? .distantPast) > Date() else { continue }
             owned.insert(transaction.productID)
             if let expiry = transaction.expirationDate, expiry > (latestNativeExpiry ?? .distantPast) { latestNativeExpiry = expiry }
-            SubscriptionAnalyticsService.shared.report(transaction)
+            SubscriptionAnalyticsService.shared.report(entitlement)
         }
         purchasedProductIDs = owned
         nativeExpiresAt = latestNativeExpiry
@@ -126,7 +126,7 @@ final class StoreFront {
             switch try await product.purchase() {
             case .success(let verification):
                 guard case .verified(let transaction) = verification else { throw URLError(.cannotParseResponse) }
-                SubscriptionAnalyticsService.shared.report(transaction)
+                SubscriptionAnalyticsService.shared.report(verification, recordsConversion: true)
                 await transaction.finish()
                 await refreshEntitlements()
                 guard isSubscribed else { return .pending }

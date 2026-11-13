@@ -10,11 +10,13 @@
 		<string>SF-Pro-Display-Regular.otf</string>
 	</array>
 	<key>NSUserTrackingUsageDescription</key>
-	<string>Your permission helps us measure which campaigns bring people to WaveVibro and improve our advertising. You can use the app without allowing tracking.</string>
+	<string>Your permission allows WaveRelax to use your device’s advertising identifier to measure advertising performance and show more relevant ads. You can use the app without allowing tracking.</string>
 	<key>WaveAppsFlyerDevKey</key>
-	<string></string>
+	<string>rjMGTuktUc8HUfLXXo9wb8</string>
 	<key>WaveAmplitudeAPIKey</key>
-	<string></string>
+	<string>a0aa79c3ce254d1bde55d1dae3f35bfc</string>
+	<key>WaveAdaptyAPIKey</key>
+	<string>public_live_9zWk6vdm.TFfz4BqkbVt144PZbXxV</string>
 	<key>LSApplicationQueriesSchemes</key>
 	<array>
 		<string>mailto</string>

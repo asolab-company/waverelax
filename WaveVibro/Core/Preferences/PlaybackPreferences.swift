@@ -3,6 +3,9 @@ import Foundation
 @MainActor
 @Observable
 final class PlaybackPreferences {
+    var vibrationsEnabled: Bool {
+        didSet { persist() }
+    }
     var intensity: IntensityGrade {
         didSet { persist() }
     }
@@ -19,6 +22,7 @@ final class PlaybackPreferences {
     private static let legacyTempoKey = "vibration_speed"
 
     init() {
+        vibrationsEnabled = UserDefaults.standard.object(forKey: "playback_vibrations") as? Bool ?? true
         if let stored = UserDefaults.standard.object(forKey: Self.intensityKey) as? Float,
            let grade = IntensityGrade(rawValue: stored) {
             intensity = grade
@@ -45,6 +49,7 @@ final class PlaybackPreferences {
     }
 
     private func persist() {
+        UserDefaults.standard.set(vibrationsEnabled, forKey: "playback_vibrations")
         UserDefaults.standard.set(intensity.rawValue, forKey: Self.intensityKey)
         UserDefaults.standard.set(tempo, forKey: Self.tempoKey)
         onChange?()
