@@ -11,12 +11,14 @@ workflows:
     scripts:
       - name: Sanity check env
         script: |
+          set -e
           test -n "$APP_STORE_CONNECT_ISSUER_ID" || (echo "ISSUER_ID empty" && exit 1)
           test -n "$APP_STORE_CONNECT_KEY_ID" || (echo "KEY_ID empty" && exit 1)
           test -n "$APP_STORE_CONNECT_PRIVATE_KEY" || (echo "PRIVATE_KEY empty" && exit 1)
 
       - name: Fetch signing files
         script: |
+          set -e
           app-store-connect fetch-signing-files \
             "com.waverelax.app" \
             --type IOS_APP_STORE \
@@ -27,15 +29,26 @@ workflows:
 
       - name: Setup keychain
         script: |
+          set -e
           keychain initialize
           keychain add-certificates
 
       - name: Apply provisioning to project
         script: |
+          set -e
           xcode-project use-profiles --project "WaveVibro.xcodeproj"
+
+      - name: Increment build number
+        script: |
+          set -e
+          LATEST_BUILD=$(app-store-connect get-latest-testflight-build-number "com.waverelax.app" || echo 3)
+          NEW_BUILD=$((LATEST_BUILD + 1))
+          echo "Setting CFBundleVersion to $NEW_BUILD"
+          agvtool new-version -all $NEW_BUILD
 
       - name: Build iOS ipa
         script: |
+          set -e
           xcode-project build-ipa \
             --project "WaveVibro.xcodeproj" \
             --scheme "WaveVibro" \
